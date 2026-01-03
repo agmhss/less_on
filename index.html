@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Slide Master v4</title>
+    <title>Children's Lesson Maker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="importmap">
     {
@@ -17,8 +17,8 @@
     <div class="max-w-4xl mx-auto bg-white shadow-2xl rounded-3xl overflow-hidden border-8 border-white">
         
         <header class="bg-gradient-to-r from-blue-500 to-indigo-600 p-8 text-white text-center">
-            <h1 class="text-4xl font-black uppercase tracking-tighter">🚀 Lesson AI Explorer</h1>
-            <p class="text-blue-100 mt-2 font-medium">Turn textbooks or topics into beautiful kid-friendly presentations!</p>
+            <h1 class="text-4xl font-black uppercase tracking-tighter">🚀 AI Lesson Makerr</h1>
+            <p class="text-blue-100 mt-2 font-medium">Turn textbooks or topics into beautiful presentations!</p>
         </header>
 
         <section id="setup-view" class="p-8 space-y-8">
@@ -92,7 +92,7 @@
 
             try {
                 const genAI = new GoogleGenerativeAI(key);
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
                 const prompt = `Create 8–12 engaging slides for children (ages 8–12) about: ${topic || 'the attached PDF'}.
                 For each slide, provide:
