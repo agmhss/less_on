@@ -102,7 +102,7 @@
 
             try {
                 const genAI = new GoogleGenerativeAI(key);
-                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Stable & reliable as of 2026
+                const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); // Stable & reliable as of 2026
 
                 const reader = new FileReader();
                 reader.onload = async () => {
@@ -165,7 +165,7 @@ Return ONLY pure valid JSON array of objects. No markdown, no extra text.`;
         };
 
         async function addImagesToSlides(genAI) {
-            const imgModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Can generate images
+            const imgModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }); // Can generate images
 
             for (let i = 0; i < finalSlides.length; i++) {
                 const slide = finalSlides[i];
