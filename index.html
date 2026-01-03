@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GTK Slides Maker v6.1 – Ultra Fast ⚡</title>
+    <title>GTK Slides Maker ⚡</title>
     <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="importmap">
@@ -105,8 +105,8 @@
 <div class="max-w-4xl mx-auto bg-white shadow-2xl rounded-3xl overflow-hidden border-8 border-white">
 
     <header class="bg-gradient-to-r from-emerald-500 to-teal-600 p-8 text-white text-center">
-        <h1 class="text-4xl font-black uppercase tracking-tighter">🚀 GTK Slides v6.1 – ULTRA FAST</h1>
-        <p class="text-emerald-100 mt-2 font-medium">Instant preview + real AI images in one click ⚡</p>
+        <h1 class="text-4xl font-black uppercase tracking-tighter">🚀 GTK Slides Maker</h1>
+        <p class="text-emerald-100 mt-2 font-medium"> AI images in one click ⚡</p>
     </header>
 
     <section id="setup-view" class="p-8 space-y-8">
@@ -197,7 +197,7 @@
 
         try {
             genAI = new GoogleGenerativeAI(key);
-            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
             const reader = new FileReader();
             reader.onload = async () => {
@@ -259,7 +259,7 @@ Return ONLY valid JSON array of objects with exactly these keys:
 
         showStatus("🖼️ Generating beautiful images with Gemini...", "indigo");
 
-        const imgModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+        const imgModel = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
 
         for (let i = 0; i < finalSlides.length; i++) {
             const slide = finalSlides[i];
