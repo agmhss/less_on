@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Slide Master v3</title>
+    <title>Gemini Slide Master v4</title>
     <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script type="importmap">
@@ -19,7 +19,7 @@
         
         <header class="bg-gradient-to-r from-blue-500 to-indigo-600 p-8 text-white text-center">
             <h1 class="text-4xl font-black uppercase tracking-tighter">🚀 Lesson AI Explorer</h1>
-            <p class="text-blue-100 mt-2 font-medium">Turn textbooks into kid-friendly presentations!</p>
+            <p class="text-blue-100 mt-2 font-medium">Turn textbooks into beautiful kid-friendly presentations!</p>
         </header>
 
         <section id="setup-view" class="p-8 space-y-8">
@@ -35,12 +35,12 @@
                     <input type="file" id="pdf-file" accept="application/pdf" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer">
                 </div>
                 <div class="p-6 bg-green-50 rounded-2xl border-2 border-green-100">
-                    <label class="block text-green-800 font-bold mb-2">📖 Step 3: Pages (optional, default: first 10)</label>
+                    <label class="block text-green-800 font-bold mb-2">📖 Step 3: Pages (optional)</label>
                     <div class="flex gap-4">
                         <input type="number" id="pg-start" placeholder="Start" min="1" class="w-1/2 p-2 rounded-lg border-green-200 focus:ring-2 focus:ring-green-400">
                         <input type="number" id="pg-end" placeholder="End" min="1" class="w-1/2 p-2 rounded-lg border-green-200 focus:ring-2 focus:ring-green-400">
                     </div>
-                    <p class="text-xs text-green-700 mt-2">Leave blank for pages 1–10</p>
+                    <p class="text-xs text-green-700 mt-2">Leave blank for first 10 pages</p>
                 </div>
             </div>
 
@@ -48,17 +48,22 @@
                 ✨ CREATE MY LESSON!
             </button>
 
-            <div id="status-message" class="hidden mt-4 p-4 rounded-xl text-center font-bold"></div>
+            <div id="status-message" class="hidden mt-4 p-4 rounded-xl text-center font-bold text-lg"></div>
         </section>
 
         <section id="editor-view" class="hidden p-8 bg-gray-50 border-t-4 border-indigo-100">
-            <div class="flex justify-between items-center mb-8">
-                <h2 class="text-3xl font-bold text-gray-800 italic">✏️ Your Slides</h2>
-                <button id="download-btn" class="bg-green-500 hover:bg-green-600 text-white px-8 py-3 rounded-2xl font-black text-xl shadow-lg">
-                    📥 DOWNLOAD PPTX
-                </button>
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                <h2 class="text-3xl font-bold text-gray-800 italic">✏️ Your Beautiful Slides</h2>
+                <div class="flex gap-4">
+                    <button id="download-pptx-btn" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-2xl font-black text-xl shadow-lg">
+                        📥 DOWNLOAD PPTX
+                    </button>
+                    <button id="download-pdf-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-2xl font-black text-xl shadow-lg">
+                        📄 DOWNLOAD PDF
+                    </button>
+                </div>
             </div>
-            <div id="slide-editor-container" class="space-y-6"></div>
+            <div id="slide-editor-container" class="space-y-8"></div>
         </section>
     </div>
 
@@ -82,98 +87,133 @@
             const btn = document.getElementById('main-action-btn');
             const status = document.getElementById('status-message');
             btn.disabled = true;
-            btn.innerText = "⏳ Processing...";
-            status.classList.add('hidden');
+            btn.innerText = "⏳ Working...";
+            status.classList.remove('hidden');
+            status.className = "mt-4 p-4 rounded-xl text-center font-bold bg-blue-100 text-blue-800 text-lg";
+            status.innerText = "📄 PDF loaded – sending to Gemini...";
+
+            let countdown = 90; // max expected seconds
+            const timer = setInterval(() => {
+                countdown--;
+                if (countdown > 0) {
+                    status.innerText = `📄 Processing with Gemini... Estimated time left: ${countdown}s`;
+                }
+            }, 1000);
 
             try {
                 const genAI = new GoogleGenerativeAI(key);
-
-                // Updated to the latest fast model as of 2026: gemini-2.5-flash (faster, better PDF understanding)
-                const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+                const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Stable & reliable as of 2026
 
                 const reader = new FileReader();
                 reader.onload = async () => {
                     try {
-                        status.classList.remove('hidden');
-                        status.className = "mt-4 p-4 rounded-xl text-center font-bold bg-blue-100 text-blue-800";
-                        status.innerText = "📄 PDF loaded successfully – sending to Gemini (this may take 30–90 seconds)...";
-
                         const base64Data = reader.result.split(',')[1];
 
                         const pageInfo = start && end ? `pages ${start} to ${end}` : `the first ${end || 10} pages`;
 
-                        const prompt = `Analyze this textbook PDF (${pageInfo}). Extract key concepts and create 8–12 engaging presentation slides for children (ages 8–12).
-Return ONLY a valid JSON array of objects with exactly these fields:
-- "title": string (slide title)
-- "bulletPoints": array of 3–5 short strings (bullet points)
-- "youtubeSearch": string (suggested YouTube search term for a related kid-friendly video)
+                        const prompt = `Analyze this textbook PDF (${pageInfo}). Create 8–12 engaging slides for children (ages 8–12).
+For each slide, provide:
+- "title": short fun title
+- "bulletPoints": array of 3–5 short, simple bullet points
+- "imagePrompt": a detailed prompt for a colorful, kid-friendly illustration matching the slide content (e.g., "cartoon happy children learning about planets in space")
 
-Do not include any extra text, explanations, markdown, or code blocks. Output pure JSON only.`;
+Return ONLY pure valid JSON array of objects. No markdown, no extra text.`;
 
                         const result = await model.generateContent([
-                            {
-                                inlineData: {
-                                    mimeType: "application/pdf",
-                                    data: base64Data
-                                }
-                            },
+                            { inlineData: { mimeType: "application/pdf", data: base64Data } },
                             { text: prompt }
                         ]);
 
-                        const responseText = result.response.text();
+                        clearInterval(timer);
 
-                        // Robust cleaning of possible wrappers
-                        const cleaned = responseText.trim()
-                            .replace(/^```json\s*/i, '')
-                            .replace(/\s*```$/g, '')
-                            .trim();
+                        const responseText = result.response.text();
+                        const cleaned = responseText.trim().replace(/^```json\s*/i, '').replace(/\s*```$/g, '').trim();
 
                         finalSlides = JSON.parse(cleaned);
 
                         if (!Array.isArray(finalSlides) || finalSlides.length === 0) {
-                            throw new Error("Generated slides array is empty or invalid.");
+                            throw new Error("No slides returned.");
                         }
 
                         renderEditor();
                         document.getElementById('setup-view').classList.add('hidden');
                         document.getElementById('editor-view').classList.remove('hidden');
 
-                        status.className = "mt-4 p-4 rounded-xl text-center font-bold bg-green-100 text-green-800";
-                        status.innerText = "✅ Slides generated successfully! You can now edit and download.";
-                    } catch (parseErr) {
-                        console.error(parseErr);
-                        alert("Gemini read the PDF but the response wasn't valid JSON. This can happen with complex PDFs.\n\nTry:\n• Reducing the page range\n• Using a simpler PDF\n• Trying again\n\nError: " + parseErr.message);
+                        status.className = "mt-4 p-4 rounded-xl text-center font-bold bg-green-100 text-green-800 text-lg";
+                        status.innerText = "✅ Slides ready! Now adding beautiful images... (this may take 1–2 minutes)";
+                        
+                        // Add images sequentially
+                        await addImagesToSlides(genAI);
+
+                        status.className = "hidden";
+                    } catch (err) {
+                        clearInterval(timer);
+                        console.error(err);
+                        alert("Error processing response: " + err.message + "\nTry a smaller page range.");
                     } finally {
                         btn.disabled = false;
                         btn.innerText = "✨ CREATE MY LESSON!";
                     }
                 };
-
-                reader.onerror = () => {
-                    alert("Error reading the PDF file.");
-                    btn.disabled = false;
-                    btn.innerText = "✨ CREATE MY LESSON!";
-                };
-
                 reader.readAsDataURL(file);
             } catch (err) {
-                console.error(err);
-                alert("API Error: " + (err.message || "Check your API key, network, or try a different model."));
+                clearInterval(timer);
+                alert("API Error: " + err.message);
                 btn.disabled = false;
                 btn.innerText = "✨ CREATE MY LESSON!";
             }
         };
 
+        async function addImagesToSlides(genAI) {
+            const imgModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Can generate images
+
+            for (let i = 0; i < finalSlides.length; i++) {
+                const slide = finalSlides[i];
+                if (!slide.imagePrompt) continue;
+
+                try {
+                    const imgResult = await imgModel.generateContent([
+                        "Generate a colorful, fun, kid-friendly illustration based exactly on this prompt: " + slide.imagePrompt,
+                        { generationConfig: { responseMimeType: "image/png" } }
+                    ]);
+
+                    const imgPart = imgResult.response.candidates[0].content.parts[0].inlineData;
+                    if (imgPart) {
+                        slide.imageData = `data:${imgPart.mimeType};base64,${imgPart.data}`;
+                    }
+                } catch (e) {
+                    console.warn(`Image generation failed for slide ${i+1}:`, e);
+                    slide.imageData = null;
+                }
+
+                // Update preview
+                const previewImg = document.getElementById(`preview-img-${i}`);
+                if (previewImg && slide.imageData) {
+                    previewImg.src = slide.imageData;
+                    previewImg.classList.remove('hidden');
+                }
+            }
+        }
+
         function renderEditor() {
             const container = document.getElementById('slide-editor-container');
             container.innerHTML = finalSlides.map((s, i) => `
-                <div class="bg-white p-6 rounded-3xl border-4 border-indigo-50 shadow-lg relative overflow-hidden">
-                    <div class="absolute top-0 right-0 p-2 bg-indigo-100 text-indigo-600 font-bold text-xs rounded-bl-xl">Slide ${i+1}</div>
-                    <input class="w-full text-2xl font-black text-indigo-700 mb-4 focus:outline-none border-b-2 border-transparent focus:border-indigo-300" 
+                <div class="bg-white p-8 rounded-3xl border-4 border-indigo-100 shadow-xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-3 bg-indigo-100 text-indigo-700 font-bold text-sm rounded-bl-xl">Slide ${i+1}</div>
+                    
+                    <input class="w-full text-3xl font-black text-indigo-800 mb-6 focus:outline-none border-b-4 border-transparent focus:border-indigo-400" 
                            value="${escapeHtml(s.title || '')}" oninput="finalSlides[${i}].title = this.value">
-                    <textarea class="w-full h-40 p-4 bg-gray-50 rounded-2xl text-gray-700 focus:ring-2 focus:ring-indigo-200 outline-none resize-none" 
-                              oninput="finalSlides[${i}].bulletPoints = this.value.split('\\n').filter(line => line.trim() !== '')">${(s.bulletPoints || []).join('\n')}</textarea>
-                    <p class="mt-4 text-sm font-bold text-orange-600">🎬 Suggested YouTube search: <span class="italic">${escapeHtml(s.youtubeSearch || '')}</span></p>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <textarea class="w-full h-48 p-4 bg-gray-50 rounded-2xl text-gray-800 text-lg focus:ring-4 focus:ring-indigo-200 outline-none resize-none" 
+                                      oninput="finalSlides[${i}].bulletPoints = this.value.split('\\n').filter(l => l.trim())">${(s.bulletPoints || []).join('\n')}</textarea>
+                        </div>
+                        <div class="flex items-center justify-center bg-gray-100 rounded-2xl overflow-hidden">
+                            <img id="preview-img-${i}" src="${s.imageData || ''}" class="${s.imageData ? '' : 'hidden'} w-full h-full object-contain" alt="Slide illustration">
+                            <p class="${s.imageData ? 'hidden' : ''} text-gray-500 italic">Image generating...</p>
+                        </div>
+                    </div>
                 </div>
             `).join('');
         }
@@ -184,7 +224,8 @@ Do not include any extra text, explanations, markdown, or code blocks. Output pu
             return div.innerHTML;
         }
 
-        document.getElementById('download-btn').onclick = () => {
+        // Fixed PPTX Download
+        document.getElementById('download-pptx-btn').onclick = () => {
             let pptx = new PptxGenJS();
             pptx.defineLayout({ name: 'A4', width: 10, height: 7.5 });
 
@@ -192,28 +233,69 @@ Do not include any extra text, explanations, markdown, or code blocks. Output pu
                 let slide = pptx.addSlide();
                 slide.background = { color: "F0F9FF" };
 
-                slide.addText(s.title || "Untitled Slide", {
-                    x: 0.5, y: 0.5, w: 9, h: 1.2,
-                    fontSize: 32, bold: true, color: "1E40AF", align: "center"
+                // Title
+                slide.addText(s.title || "Slide", {
+                    x: 0.5, y: 0.3, w: 9, h: 1,
+                    fontSize: 36, bold: true, color: "1E40AF", align: "center"
                 });
 
+                // Bullets
                 const bullets = (s.bulletPoints || []).filter(b => b.trim());
                 if (bullets.length > 0) {
                     slide.addText(bullets.map(b => `• ${b}`), {
-                        x: 0.8, y: 2, w: 8.4, h: 3.5,
-                        fontSize: 20, color: "334155", bullet: { type: "bullet" }
+                        x: 0.8, y: 1.8, w: 5, h: 4,
+                        fontSize: 22, color: "334155", bullet: true
                     });
                 }
 
-                if (s.youtubeSearch) {
-                    slide.addText(`Watch on YouTube: Search for "${s.youtubeSearch}"`, {
-                        x: 0.5, y: 6.2, w: 9, h: 0.6,
-                        fontSize: 14, italic: true, color: "6366F1", align: "center"
+                // Image (if generated)
+                if (s.imageData) {
+                    slide.addImage({
+                        data: s.imageData,
+                        x: 6, y: 1.5, w: 4, h: 4,
+                        sizing: { type: 'contain', w: 4, h: 4 }
                     });
                 }
+
+                // Footer note
+                slide.addText("Created with ❤️ by Lesson AI Explorer", {
+                    x: 0.5, y: 6.8, w: 9, h: 0.4,
+                    fontSize: 10, color: "888888", align: "center", italic: true
+                });
             });
 
-            pptx.writeFile({ fileName: "Kid-Friendly_Lesson.pptx" });
+            pptx.writeFile({ fileName: "My_Kid_Friendly_Lesson.pptx" });
+        };
+
+        // PDF Fallback (using browser print)
+        document.getElementById('download-pdf-btn').onclick = () => {
+            document.getElementById('setup-view').classList.add('hidden');
+            document.getElementById('editor-view').classList.add('hidden');
+
+            const printContainer = document.createElement('div');
+            printContainer.style.padding = '40px';
+            printContainer.style.background = 'white';
+
+            finalSlides.forEach((s, i) => {
+                const page = document.createElement('div');
+                page.style.pageBreakAfter = 'always';
+                page.style.marginBottom = '60px';
+                page.innerHTML = `
+                    <h1 style="font-size: 40px; color: #1E40AF; text-align: center; margin-bottom: 30px;">${escapeHtml(s.title)}</h1>
+                    ${s.imageData ? `<img src="${s.imageData}" style="width: 80%; max-height: 400px; display: block; margin: 30px auto; border-radius: 20px;">` : ''}
+                    <ul style="font-size: 28px; line-height: 1.8; max-width: 800px; margin: 0 auto;">
+                        ${(s.bulletPoints || []).map(b => `<li>${escapeHtml(b)}</li>`).join('')}
+                    </ul>
+                    <div style="text-align: center; margin-top: 50px; color: #888; font-size: 16px;">Slide ${i+1} • Created with Lesson AI Explorer</div>
+                `;
+                printContainer.appendChild(page);
+            });
+
+            document.body.appendChild(printContainer);
+            window.print();
+            document.body.removeChild(printContainer);
+
+            document.getElementById('editor-view').classList.remove('hidden');
         };
     </script>
 </body>
